@@ -1,0 +1,12 @@
+
+
+function math.angle(_X1,_Y1,_X2,_Y2,_IsDeg)
+
+    -- angle in radians
+    local angleRadians = math.atan2(_Y2 - _Y1, _X2 - _X1);
+    
+    -- angle in degrees
+    local angleDeg = angleRadians * 180 / math.pi;
+
+    return angleRadians
+end
