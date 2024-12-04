@@ -1,3 +1,4 @@
+-- FUNCTIONS
 -- Interpolates a string with the given arguments.
 function string.interpolate(_Str,_Args)
     return (_Str:gsub('($%b{})', function(w) return _Args[w:sub(3, -2)] or w end))
@@ -32,3 +33,61 @@ function drawCentered(_Draw, _X, _Y, _R, _Sx , _Sy)
     local width, height = _Draw:getDimensions()
     love.graphics.draw(_Draw, _X, _Y, _R, _Sx, _Sy ,width/2, height/2)
 end
+
+-- Gets the angle difference of 2 points
+function math.getAngle(_X1,_Y1,_X2,_Y2)
+    return math.atan2(_Y2-_Y1,_X2-_X1)
+end
+
+-- Gets the distance between 2 points
+function math.getDistance(_X1,_Y1,_X2,_Y2)
+    return math.sqrt((_X2-_X1)^2 + (_Y2-_Y1)^2)
+end
+
+collision = {}
+-- Checks if a point is inside a rectangle
+-- (X1,Y1,X2,Y2,W,H)
+function collision.pointRectangle(_X1,_Y1,_X2,_Y2,_W,_H)
+    return _X1 > _X2 and _X1 < _X2 + _W and _Y1 > _Y2 and _Y1 < _Y2 + _H
+end
+
+local function loadAllThings(_Path)
+    local loaded = {}
+    for i,v in pairs(love.filesystem.getDirectoryItems(_Path)) do
+        -- if it is a directory
+        if love.filesystem.getInfo(_Path.."/"..v, "directory") ~= nil then
+            loaded[v] = {}
+            for ii,vv in pairs(love.filesystem.getDirectoryItems(_Path .. "/" .. v)) do
+                local imgName = string.sub(vv, 1, -5)
+                loaded[v][imgName] = love.graphics.newImage(strJoin(_Path, "/", v, "/", vv))
+            end
+        else -- if it is a file
+            local imgName = string.sub(v, 1, -5)
+            loaded[imgName] = love.graphics.newImage(_Path .. "/" .. v)
+        end
+    end
+    return loaded
+end
+--LOADING FILES
+
+img = {}
+img = loadAllThings("img")
+
+sfx = {}
+sfx = loadAllThings("sfx")
+
+font = {}
+font = {
+    small = love.graphics.newFont(12),
+    medium = love.graphics.newFont(24),
+    big = love.graphics.newFont(48),
+    monospace = {
+        small = love.graphics.newFont("fonts/monospaced.ttf", 12),
+        medium = love.graphics.newFont("fonts/monospaced.ttf", 24),
+        big = love.graphics.newFont("fonts/monospaced.ttf", 48)
+    }
+}
+
+print(json.encode(img))
+
+

@@ -2,6 +2,7 @@ screenLib = require("lib/screen")
 json = require("lib/json")
 require("lib/loveExpanded")
 
+love.window.updateMode(nil,nil,{vSync = false, resizable = true, msaa = 4})
 gameStates = {}
 currentGameState = {}
 
@@ -14,8 +15,16 @@ end
 
 function changeGameState(_State,_Arg)
     currentGameState = gameStates[_State]
+    if not currentGameState then
+        error(string.interpolate("State \"${state}\" does not exist",
+        {state = _State}))
+    end
+
     if currentGameState.load then
         currentGameState.load(_Arg)
+    else
+        error(string.interpolate("State \"${state}\" does not have a load function",
+        {state = _State}))
     end
     love.window.setTitle(_State)
 end
@@ -33,49 +42,48 @@ function love.draw()
 end
 
 function love.mousepressed(x, y, button, istouch, presses)
-    if currentGameState.onMouseClick then
-        currentGameState.onMouseClick(x, y, button, istouch, presses)
+    if currentGameState.mousepressed then
+        currentGameState.mousepressed(x, y, button, istouch, presses)
     end
 end
-
 function love.keypressed(key, scancode, isrepeat)
-    if currentGameState.onKeyPress then
-        currentGameState.onKeyPress(key, scancode, isrepeat)
+    if currentGameState.keypressed then
+        currentGameState.keypressed(key, scancode, isrepeat)
     end
 end
 
 function love.keyreleased(key, scancode)
-    if currentGameState.onKeyRelease then
-        currentGameState.onKeyRelease(key, scancode)
+    if currentGameState.keyreleased then
+        currentGameState.keyreleased(key, scancode)
     end
 end
 
 function love.mousemoved(x, y, dx, dy, istouch)
-    if currentGameState.onMouseMove then
-        currentGameState.onMouseMove(x, y, dx, dy, istouch)
+    if currentGameState.mousemoved then
+        currentGameState.mousemoved(x, y, dx, dy, istouch)
     end
 end
 
 function love.quit()
-    if currentGameState.onQuit then
-        currentGameState.onQuit()
+    if currentGameState.quit then
+        currentGameState.quit()
     end
 end
 
 function love.focus(f)
-    if currentGameState.onFocus then
-        currentGameState.onFocus(f)
+    if currentGameState.focus then
+        currentGameState.focus(f)
     end
 end
 
 function love.resize(w, h)
-    if currentGameState.onResize then
-        currentGameState.onResize(w, h)
+    if currentGameState.resize then
+        currentGameState.resize(w, h)
     end
 end
 
 function love.textinput(t)
-    if currentGameState.onTextInput then
-        currentGameState.onTextInput(t)
+    if currentGameState.textinput then
+        currentGameState.textinput(t)
     end
 end

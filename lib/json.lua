@@ -111,7 +111,6 @@ local function encode_number(val)
   return string.format("%.14g", val)
 end
 
-
 local function encode_userdata(val)
     return '"'..tostring(val)..'"'
   --error("unexpected type 'userdata'")
