@@ -1,3 +1,6 @@
+-- https://github.com/Laggh/loveButtons
+-- If you like this please star the repository on github.
+
 local API = {}
 function API.setScreen(_Width,_Height)
     sizeX,sizeY = love.window.getMode()
