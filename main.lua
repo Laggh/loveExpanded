@@ -2,7 +2,9 @@ screenLib = require("lib/screen")
 json = require("lib/json")
 require("lib/loveExpanded")
 
+
 love.window.updateMode(nil,nil,{vSync = false, resizable = true, msaa = 4})
+
 gameStates = {}
 currentGameState = {}
 
