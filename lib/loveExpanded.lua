@@ -7,30 +7,26 @@ function string.interpolate(_Str,_Args)
 end
 
 -- Clamps a value between a minimum and maximum value.
--- (Min,Value,Max)
-function setLimits(_Min,_Value,_Max)
+-- (Min,Value,Max) -> Value
+function setLimits(_Value,_Min,_Max)
     if _Value < _Min then return _Min end
     if _Value > _Max then return _Max end
     return _Value
 end
 
 -- Checks if a value is within a specified range.
--- (Min,Value,Max) 
-function inLimits(_Min,_Value,_Max)
+-- (Min,Value,Max) -> Boolean
+function inLimits(_Value,_Min,_Max)
     if _Value < _Min then return false end
     if _Value > _Max then return false end
     return true
 end
 
 -- Joins multiple values into a single string.
--- (Value1,Value2,...)
+-- (Value1,Value2,...) -> String
 function strJoin(...)
     local args = {...}
-    local str = ""
-    for i,v in ipairs(args) do
-        str = str .. tostring(v)
-    end
-    return str
+    return table.concat(args)
 end
 
 -- Draws an image centered at the given coordinates.
@@ -50,27 +46,27 @@ function withColor(_R,_G,_B,_A,_Function)
 end
 
 -- Gets the angle difference of 2 points
--- (X1,Y1,X2,Y2)
+-- (X1,Y1,X2,Y2) -> Angle
 function math.getAngle(_X1,_Y1,_X2,_Y2)
     _X2,_Y2 = _X2 or 0,_Y2 or 0
     return math.atan2(_Y2-_Y1,_X2-_X1)
 end
 
 -- Gets the distance between 2 points
--- (X1,Y1,X2,Y2)
+-- (X1,Y1,X2,Y2) -> Distance
 function math.getDistance(_X1,_Y1,_X2,_Y2)
     return math.sqrt((_X2-_X1)^2 + (_Y2-_Y1)^2)
 end
 
 collision = {}
 -- Checks if a point is inside a rectangle
--- (X1,Y1,X2,Y2,W,H)
+-- (X1,Y1,X2,Y2,W,H) -> Boolean
 function collision.pointRectangle(_X1,_Y1,_X2,_Y2,_W,_H)
     return _X1 > _X2 and _X1 < _X2 + _W and _Y1 > _Y2 and _Y1 < _Y2 + _H
 end
 
 -- Checks if a point is inside a circle
--- (X1,Y1,X2,Y2,R)
+-- (X1,Y1,X2,Y2,R) -> Boolean
 function collision.rectangleRectangle(_X1,_Y1,_W1,_H1,_X2,_Y2,_W2,_H2)
     return _X1 < _X2 + _W2 and
            _X2 < _X1 + _W1 and
@@ -78,13 +74,13 @@ function collision.rectangleRectangle(_X1,_Y1,_W1,_H1,_X2,_Y2,_W2,_H2)
            _Y2 < _Y1 + _H1
 end
 -- Checks if a point is inside a circle
--- (X1,Y1,X2,Y2,R)
+-- (X1,Y1,X2,Y2,R) -> Boolean
 function collision.pointCircle(_X1,_Y1,_X2,_Y2,_R)
     return math.getDistance(_X1,_Y1,_X2,_Y2) < _R
 end
 
 -- Checks if a circle is inside a rectangle
--- (X1,Y1,R1,X2,Y2,W,H)
+-- (X1,Y1,R1,X2,Y2,W,H) -> Boolean
 function collision.circleCircle(_X1,_Y1,_R1,_X2,_Y2,_R2)
     return math.getDistance(_X1,_Y1,_X2,_Y2) < _R1 + _R2
 end
