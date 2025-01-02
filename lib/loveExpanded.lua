@@ -1,7 +1,7 @@
 -- FUNCTIONS
 
 -- Interpolates a string with the given arguments.
--- (String[],Arguments[])
+-- (String[],Arguments[]) -> String
 function string.interpolate(_Str,_Args)
     return (_Str:gsub('($%b{})', function(w) return _Args[w:sub(3, -2)] or w end))
 end
@@ -15,7 +15,7 @@ function setLimits(_Min,_Value,_Max)
 end
 
 -- Checks if a value is within a specified range.
--- (Min,Value,Max)
+-- (Min,Value,Max) 
 function inLimits(_Min,_Value,_Max)
     if _Value < _Min then return false end
     if _Value > _Max then return false end
@@ -40,9 +40,19 @@ function drawCentered(_Draw, _X, _Y, _R, _Sx , _Sy)
     love.graphics.draw(_Draw, _X, _Y, _R, _Sx, _Sy ,width/2, height/2)
 end
 
+-- Isolates a color inside a function
+-- (R,G,B,A,Function)
+function withColor(_R,_G,_B,_A,_Function)
+    local r,g,b,a = love.graphics.getColor()
+    love.graphics.setColor(_R,_G,_B,_A)
+    _Function()
+    love.graphics.setColor(r,g,b,a)
+end
+
 -- Gets the angle difference of 2 points
 -- (X1,Y1,X2,Y2)
 function math.getAngle(_X1,_Y1,_X2,_Y2)
+    _X2,_Y2 = _X2 or 0,_Y2 or 0
     return math.atan2(_Y2-_Y1,_X2-_X1)
 end
 
