@@ -88,7 +88,14 @@ local function loadAllThings(_Path)
     local loaded = {}
     for i,v in pairs(love.filesystem.getDirectoryItems(_Path)) do
         -- if it is a directory
-        if love.filesystem.getInfo(_Path.."/"..v, "directory") ~= nil then
+        local isDirectory = false
+        if love.filesystem.getInfo then
+            isDirectory = love.filesystem.getInfo(_Path.."/"..v, "directory") ~= nil
+        else
+            isDirectory = love.filesystem.isDirectory(_Path.."/"..v)
+        end
+
+        if isDirectory then
             loaded[v] = {}
             for ii,vv in pairs(love.filesystem.getDirectoryItems(_Path .. "/" .. v)) do
                 local imgName = string.sub(vv, 1, -5)
