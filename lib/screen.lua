@@ -39,4 +39,42 @@ function API.createBorder()
     love.graphics.setColor(1, 1, 1, 1)
 end
 
+function API.checkOfsets(_Width,_Height)
+    sizeX,sizeY = love.window.getMode()
+    local aspectRatio = sizeX/sizeY
+    local newAspectRatio = _Width/_Height
+    local scale = 1
+
+    if aspectRatio > newAspectRatio then -- largura original é maior
+        scale = sizeY / _Height
+    else -- largura original é menor
+        scale = sizeX / _Width
+    end
+    
+    newX = _Width * scale
+    newY = _Height * scale
+    offY = (sizeY - newY) / 2
+    offX = (sizeX - newX) / 2
+    API.sizeX = _Width
+    API.sizeY = _Height
+    API.offX = offX/scale
+    API.offY = offY/scale
+    API.scale = scale
+end
+
+function API.getMousePosition()
+    local x,y = love.mouse.getPosition()
+    x = (x/API.scale) - API.offX
+    y = (y/API.scale) - API.offY
+    return x,y
+end
+
+function API.toScreen(_X,_Y)
+    return _X * API.scale + API.offX, _Y * API.scale + API.offY
+end
+
+function API.toGame(_X,_Y)
+    return (_X - API.offX) / API.scale, (_Y - API.offY) / API.scale
+end
+
 return API
