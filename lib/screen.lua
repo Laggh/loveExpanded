@@ -2,6 +2,7 @@
 -- If you like this please star the repository on github.
 
 local API = {}
+
 function API.setScreen(_Width,_Height)
     sizeX,sizeY = love.window.getMode()
     local aspectRatio = sizeX/sizeY
@@ -62,6 +63,9 @@ function API.checkOfsets(_Width,_Height)
     API.scale = scale
 end
 
+---Gets the mouse position in game coordinates
+---@return number x
+---@return number y
 function API.getMousePosition()
     local x,y = love.mouse.getPosition()
     x = (x/API.scale) - API.offX
@@ -69,10 +73,20 @@ function API.getMousePosition()
     return x,y
 end
 
+---Transforms game coordinates to screen coordinates
+---@param _X number
+---@param _Y number
+---@return number screenX
+---@return number screenY
 function API.toScreen(_X,_Y)
     return _X * API.scale + API.offX, _Y * API.scale + API.offY
 end
 
+---Transforms screen coordinates to game coordinates
+---@param _X number
+---@param _Y number
+---@return number gameX
+---@return number gameY
 function API.toGame(_X,_Y)
     return (_X - API.offX) / API.scale, (_Y - API.offY) / API.scale
 end

@@ -1,7 +1,12 @@
 local lib = {}
 
--- Transforms an HSV value to RGB
--- (Hue, Saturation, Value) -> (Red, Green, Blue)
+---Converts HSV color values to RGB color values
+---@param hue number (0 to 1)
+---@param saturation number (0 to 1)
+---@param value number (0 to 1)
+---@return number red (0 to 1)
+---@return number green (0 to 1)
+---@return number blue (0 to 1)
 function HSVtoRGB(hue, saturation, value)
     local red, green, blue
 
@@ -24,12 +29,12 @@ function HSVtoRGB(hue, saturation, value)
     elseif i == 4 then red, green, blue = t, p, value
     elseif i == 5 then red, green, blue = value, p, q
     end
+
     return red, green, blue
 end
 
 if love.graphics then
-    -- Sets the color of the graphics to a HSV value
-    -- (Hue, Saturation, Value, Alpha) -> ()
+    ---Sets the current drawing color using HSV values
     function love.graphics.setColorHSV(hue, saturation, value, alpha)
         local red, green, blue = HSVtoRGB(hue, saturation, value)
         love.graphics.setColor(red, green, blue, alpha)
