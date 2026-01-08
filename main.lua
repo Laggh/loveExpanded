@@ -36,6 +36,7 @@ function love.load()
 end
 
 function love.update(dt)
+    if not currentGameState.update then return end
     currentGameState.update(dt)
 end
 

@@ -1,0 +1,6 @@
+/bin
+/obj
+*.love
+*.exe
+Thumbs.db
+.DS_Store
