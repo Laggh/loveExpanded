@@ -13,6 +13,22 @@ for i,v in pairs(love.filesystem.getDirectoryItems("gameStates")) do
         local stateName = string.sub(v,1,-5)
         gameStates[stateName] = require("gameStates/"..stateName)
     end
+
+    if love.filesystem.getInfo("gameStates/"..v).type == "directory" then
+
+        if love.filesystem.getInfo("gameStates/"..v.."/main.lua") ~= nil then
+            gameStates[v] = require("gameStates/"..v.."/main")
+        else
+            for ii,vv in pairs(love.filesystem.getDirectoryItems("gameStates/"..v)) do
+                local strippedName = string.sub(vv,1,-5)
+                gameStates[v.."/"..strippedName] = require("gameStates/"..v.."/"..strippedName)
+            end
+        end
+    end
+end
+
+for i,v in pairs(gameStates) do
+    print("gamestate existente",i)
 end
 
 function changeGameState(_State,_Arg)
