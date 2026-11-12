@@ -4,10 +4,11 @@ local points
 
 function thisState.load()
     points = 0
+    changeGameState("netClientExample")
 end 
 
 function thisState.draw()
-    love.graphics.print("Mouse Clicks: "..points,100,100)
+    love.graphics.print("Pontos: " .. points, 10, 10)
 end
 
 

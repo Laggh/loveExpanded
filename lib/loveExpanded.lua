@@ -63,6 +63,17 @@ function withColor(_R,_G,_B,_A,_Function)
     love.graphics.setColor(r,g,b,a)
 end
 
+---Runs a function if its defined, otherwise does nothing, can return the function's return values
+---@param _Function function
+---@return boolean didRun, any, any, any    
+function runIfDefined(_Function, ...)
+    local a,b,c = nil,nil,nil
+    if _Function then
+        a,b,c = _Function(...)
+        return true, a,b,c
+    end
+    return false, a,b,c
+end
 ---Gets the angle difference of 2 points
 ---@param _X1 number
 ---@param _Y1 number
