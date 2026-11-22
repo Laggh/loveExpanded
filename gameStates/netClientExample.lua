@@ -4,14 +4,25 @@ local json = require("lib/json")
 
 local myConnectionId = nil
 local myPlayer = {x = 100, y = 100}
+local SERVER_THREAD 
+
+local _print = print
+local print = function(...) _print("[C]", ...) end
 
 function thisState.load()
+    print("load iniciado")
+    --Inicia servidor em outra thread
+    SERVER_THREAD = love.thread.newThread("server/main.lua")
+    SERVER_THREAD:start()
+
     net.tryConnect("localhost:6789")
 end
 
 -- 2. Motor avisa quando está pronto
 function net.onConnect(meuId, connectionParams)
     print("Oba! Conectei. Meu ID é: " .. meuId)
+    print("Parâmetros de conexão: " .. json.encode(connectionParams))
+
     myConnectionId = meuId
     net.localState = {}
 end
@@ -30,6 +41,8 @@ function thisState.update(dt)
     }
     
     net.update(dt) 
+
+    --print("update. estado:", net.connectionState, "meuId:", myConnectionId)
 end
 
 function net.onOverride(data)

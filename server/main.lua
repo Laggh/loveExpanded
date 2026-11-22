@@ -1,7 +1,12 @@
+local _print = print
+local print = function(...) _print("[S]", ...) end
+
 local server = require("lib/enetServer")
+
 
 -- Configurações iniciais
 function server.load()
+    print("load iniciado")
     server.config.tickRate = 20
     server.config.timeout = 1000
 end

@@ -123,6 +123,7 @@ local type_func_map = {
   [ "number"  ] = encode_number,
   [ "boolean" ] = tostring,
   [ "userdata"] = encode_userdata,
+  --[ "function"] = function() return "\"FUNCTION\"" end,
 }
 
 

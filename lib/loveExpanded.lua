@@ -171,7 +171,13 @@ local function loadAllThings(_Path)
     end
     return loaded
 end
+
 --LOADING FILES
+
+if(not love.graphics) then
+    return
+end
+
 
 img = {}
 img = loadAllThings("img")

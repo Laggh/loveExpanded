@@ -2,6 +2,13 @@ local client = {}
 local enet = require "enet"
 local json = require("lib/json")
 require("lib/loveExpanded")
+
+local CHANNEL_COUNT = 2
+local RELIABLE_CHANNEL = 0
+local UNRELIABLE_CHANNEL = 1
+
+local _print = print
+local print = function(...)_print("[IC]", ...)end
 -- ==========================================
 -- VARIÁVEIS DE ESTADO (API Pública)
 -- ==========================================
@@ -11,151 +18,130 @@ client.id = nil
 client.shared = {}       -- Somente leitura (verdade do servidor)
 client.rawShared = {}    -- Verdade do servidor sem Interpolação (no momneto é IGUAL a .shared)
 client.localState = {}   -- Previsão local do cliente
-client._bufferedEvents = {} -- Eventos recebidos do servidor que ainda não foram processados
+client._bufferedPackets = {} -- Pacotes recebidos do servidor que ainda não foram processados
+
+client.maxPacketLog = 100
+client._sentPackets = {}
+client._recievedPackets = {}
 
 client.updateRate = nil
 client._deltaSinceUpdate = 0
 
+client.host = nil
+client.serverPeer = nil
 
 
 
 
--- client.lua
-function client.tryConnect(address)
-  host = enet.host_create()
-  server = host:connect(address)
+
+
+
+
+
+--[[[PACKET LEVEL]]
+function client._handlePacket(packet)
+  print("recebido pacote do tipo "..packet.type)
+  local functionMap = {
+    ["receive"] = client._handleReceivePacket,
+    ["connect"] = client._handleConnectPacket,
+    ["disconnect"] = client._handleDisconnectPacket
+  }
+  local function noFunction(packet)
+    print("No handler for packet type: " .. packet.type)
+  end
+  local functionToRun = functionMap[packet.type] or noFunction
+  functionToRun(packet)
 end
 
-function client._sendReliable(data)
-  local jsonData = json.encode(data)
-  server:send(jsonData, 0, "reliable") 
-end
-function client._sendUnreliable(data)
-  local jsonData = json.encode(data)
-  server:send(jsonData, 1, "unreliable") 
-end
-
-function client._handleReceive(event)
-  print("Got message: ", event.data, event.peer)
+function client._handleReceivePacket(packet)
+  print("Got message: ", packet.data, packet.peer)
 
   local functionMap = {
-    ["innitial"] = client._handleInnitialMessage,
-    ["event"] = client._handleEventMessage,
-    ["snapshot"] = client._handleSnapshotMessage
+    ["innitial"] = client._handleInnitialAction,
+    ["event"] = client._handleEventAction,
+    ["snapshot"] = client._handleSnapshotAction
   }
-  local noFunction = function(event)
-    print("No handler for message type: " .. event.type)
+  local noFunction = function(packet)
+    print("No handler for message type: " .. packet.type)
   end
 
-  local data = json.decode(event.data)
+  local data = json.decode(packet.data)
+  print("decodificado. action:", data.action, "conteúdo:", packet.data)
 
-  if client.connectionState ~= "connected" then
-    print("Buffering event of type", event.data)
-    table.insert(client._bufferedEvents, event)
+  if client.connectionState ~= "connected" and data.action ~= "innitial" then
+    print("Buffering event of action", packet.type)
+    table.insert(client._bufferedPackets, packet)
     return
   end
 
-  local functionToRun = functionMap[data.type] or noFunction
+  local functionToRun = functionMap[data.action] or noFunction
   functionToRun(data)
 end
 
-function client._handleConnect(event)
+function client._handleConnectPacket(packet)
   client.connectionState = "waiting_for_innitial"
-  print(event.peer, "connected.")
+  print(packet.peer, "connected.")
 end
 
-function client._handleDisconnect(event)
+function client._handleDisconnectPacket(packet)
   client.connectionState = "disconnected"
-  print(event.peer, "disconnected.")
+  print(packet.peer, "disconnected.")
 end
 
--- Recebe evento e roteia para a função correta
-function client._handleEvent(event)
-  local functionMap = {
-    ["receive"] = client._handleReceive,
-    ["connect"] = client._handleConnect,
-    ["disconnect"] = client._handleDisconnect
-  }
-  local function noFunction(event)
-    print("No handler for event type: " .. event.type)
-  end
-  local functionToRun = functionMap[event.type] or noFunction
-  functionToRun(event)
-end
 
-function client._handleInnitialMessage(event)
+--[[ACTION LEVEL]]
+function client._handleInnitialAction(packet)
   client.connectionState = "connected"
-  client.id = event.clientId
-  client.updateRate = event.updateRate
-  client.rawShared = event.shared
-  client.shared = event.shared
+  client.id = packet.id
+  client.updateRate = packet.connectionParams.tickRate
+  client.rawShared = packet.shared
+  client.shared = packet.shared
 
   --Roda os eventos que estavam em buffer (antes de receber o innitial)
-  for _, bufferedEvent in ipairs(client._bufferedEvents) do
-    client._handleReceive(bufferedEvent)
+  for _, bufferedPacket in ipairs(client._bufferedPackets) do
+    client._handleReceivePacket(bufferedPacket)
   end
 
   if client.onConnect then
-    client.onConnect(client.id, event.connectionParams)
+    client.onConnect(client.id, packet.connectionParams)
   end
 
 end
 
-function client._handleEventMessage(event)
+function client._handleEventAction(event)
   runIfDefined(client.onEvent, event.eventName, event.data)
 end
 
-function client._handleSnapshotMessage(event)
+function client._handleSnapshotAction(event)
   client._applySnapshot(event.shared)
-  --runIfDefined(client.onOverride, event.shared)
 end
   
 
-function client.update(dt)
-  --Lida com pacotes
-  local event = host:service(0)
+--[[INTERNAL]]
+function client._sendReliable(data)
+  local jsonData = json.encode(data)
+  local sent = client.serverPeer:send(jsonData, RELIABLE_CHANNEL, "reliable")
 
-  while event do
-    client._handleEvent(event)
-    event = host:service()
-  end
-  --Para se não estiver conectado
-  if client.connectionState ~= "connected" then return end
-
-  --Lida com o Estado do Cliente
-  client._deltaSinceUpdate = client._deltaSinceUpdate + dt
-  if client._deltaSinceUpdate < client.updateRate then return end
-  
-  client._deltaSinceUpdate = 0
-
-  client._applySnapshot(client.rawShared)
-  client._sendLocalState()
-  --No futuro isso vai mudar para poder ter apenas diffs, mas no moment é só snapshot (pq ta em json)
+  table.insert(client._sentPackets, {data = data, sentTime = os.clock(), type = "reliable"})
+  if #client._sentPackets > client.maxPacketLog then table.remove(client._sentPackets, 1) end
 end
+function client._sendUnreliable(data)
+  local jsonData = json.encode(data)
+  local sent = client.serverPeer:send(jsonData, UNRELIABLE_CHANNEL, "unreliable")
 
-function client.sendEvent(eventName, data)
-  if client.connectionState ~= "connected" then print("Cannot send event, client not connected") return end
-  
-  local dataToSent = {
-    type = "event",
-    eventName = eventName,
-    data = data
-  }
-
-  local jsonData = json.encode(dataToSent)
-  server:send(jsonData, 0, "reliable")
+  table.insert(client._sentPackets, {data = data, sentTime = os.clock(), type = "unreliable"  })
+  if #client._sentPackets > client.maxPacketLog then table.remove(client._sentPackets, 1) end
 end
 
 function client._sendLocalState()
   if client.connectionState ~= "connected" then print("Cannot send local state, client not connected") return end
 
   client._sendUnreliable({
-    type = "localState",
+    action = "localState",
     localState = client.localState
   })
 end
   
--- Funções internas auxiliares sugeridas para organização
 function client._applySnapshot(data)
   for k,v in pairs(data) do
     client.shared[k] = v
@@ -166,11 +152,55 @@ function client._applyDiff(data)
 
 end
 
--- ==========================================
--- CALLBACKS DO DEV (Fallbacks vazios)
--- ==========================================
--- O motor deve chamar essas funções, mas se o dev não 
--- defini-las no main.lua, o motor não quebra.
+--[[EXTERNAL]]
+function client.tryConnect(address)
+  print("tryConnect chamado. Endereço:", address)
+  client.host = enet.host_create(nil, 1, CHANNEL_COUNT)
+  client.serverPeer = client.host:connect(address, CHANNEL_COUNT)
+  print("host criado:", tostring(client.host))
+  print("pedido de conexão enviado para:", address)
+  print("peer do servidor:", tostring(client.serverPeer))
+end
+
+function client.update(dt)
+  --print("update chamado. dt:", dt, "estado:", client.connectionState)
+  --Lida com pacotes
+  local packet = client.host:service(0)
+
+  while packet do
+    client._handlePacket(packet)
+    packet = client.host:service()
+  end
+  --Para se não estiver conectado
+  if client.connectionState ~= "connected" then return end
+
+  --Lida com o Estado do Cliente
+  local timeForUpdate = 1/client.updateRate
+  client._deltaSinceUpdate = client._deltaSinceUpdate + dt
+  if client._deltaSinceUpdate < timeForUpdate then return end
+  
+  client._deltaSinceUpdate = client._deltaSinceUpdate - timeForUpdate
+
+  client._applySnapshot(client.rawShared)
+  client._sendLocalState()
+  --No futuro isso vai mudar para poder ter apenas diffs, mas no moment é só snapshot (pq ta em json)
+end
+
+function client.sendEvent(eventName, data)
+  if client.connectionState ~= "connected" then print("Cannot send event, client not connected") return end
+  
+  local dataToSent = {
+    action = "event",
+    eventName = eventName,
+    data = data
+  }
+
+  local jsonData = json.encode(dataToSent)
+  client.serverPeer:send(jsonData, RELIABLE_CHANNEL, "reliable")
+end
+
+
+--[[CALBACKS]]
 
 --[[
 function client.onConnect(meuId, connectionParams) end

@@ -4,7 +4,7 @@ local points
 
 function thisState.load()
     points = 0
-    changeGameState("netClientExample")
+    changeGameState("netClientExample2")
 end 
 
 function thisState.draw()
